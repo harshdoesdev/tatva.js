@@ -1,5 +1,5 @@
 # tatva.js
-tatva.js is a Tiny Toolkit For Web Components.
+Tatva (Sanskrit word "तत्त्व", meaning "Element") is a Tiny Toolkit For Web Components.
 
 ## Installation
 ```bash
