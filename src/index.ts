@@ -1,3 +1,3 @@
-export { template } from "./template.js";
-export { style } from './style.js';
-export { sanitize } from './sanitize.js';
+export { template } from "./template";
+export { style } from './style';
+export { sanitize } from './sanitize';
