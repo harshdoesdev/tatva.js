@@ -1,6 +1,6 @@
 import { sanitize } from "./sanitize.js";
 
-export const template = (strings, ...values) => {
+export const template = (strings: string[], ...values: string[]) => {
 
     const tmpl = document.createElement('template');
 

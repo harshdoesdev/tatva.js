@@ -1,4 +1,4 @@
-export const style = (strings, ...values) => {
+export const style = (strings: string[], ...values: string[]) => {
 
     const stylesheet = new CSSStyleSheet;
 

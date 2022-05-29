@@ -8,6 +8,7 @@ const htmlEscapeMap = {
     "`": "&grave;"
 };
 
-const htmlEscapeReg = /[&<>"'`/]/ig;
+const htmlEscapeReg: RegExp = /[&<>"'`/]/ig;
 
-export const sanitize = str => str.replace(htmlEscapeReg, match => htmlEscapeMap[match]);
+export const sanitize = (str: string): string => 
+    str.replace(htmlEscapeReg, match => htmlEscapeMap[match]);
