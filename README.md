@@ -1,12 +1,12 @@
-# elemental.js
-elemental.js is a Tiny Toolkit For Web Components.
+# tatva.js
+tatva.js is a Tiny Toolkit For Web Components.
 
 ## Usage
 
 *template*
 
 ```javascript
-import { template } from 'elementaljs';
+import { template } from 'tatva';
 
 const tmpl = template`
     <button id="btn">Click me<button>

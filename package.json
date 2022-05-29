@@ -1,6 +1,6 @@
 {
   "type": "module",
-  "name": "elementaljs",
+  "name": "tatva",
   "version": "0.0.1",
   "description": "A Tiny Toolkit For Web Components",
   "main": "src/index.js",
@@ -8,7 +8,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "web component"
+    "web component",
+    "toolkit",
+    "template",
+    "sanitizer",
+    "css"
   ],
   "author": "Harsh Singh",
   "license": "MIT"
