@@ -61,6 +61,12 @@ _Component_frameRequest = new WeakMap(), _Component_oldTree = new WeakMap(), _Co
     }
     __classPrivateFieldSet(this, _Component_frameRequest, requestAnimationFrame(__classPrivateFieldGet(this, _Component_update, "f")), "f");
 }, _Component_updateProp = function _Component_updateProp(name, value) {
+    if (!this.constructor.propTypes) {
+        throw new Error(`No PropTypes have been defined.`);
+    }
     const type = this.constructor.propTypes[name];
+    if (!type) {
+        throw new Error(`PropType for property ${name} has not been specified.`);
+    }
     this.props[name] = type(value);
 };

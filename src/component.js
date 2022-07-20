@@ -49,7 +49,15 @@ export default class Component extends HTMLElement {
     }
 
     #updateProp(name, value) {
+        if(!this.constructor.propTypes) {
+            throw new Error(`No PropTypes have been defined.`);
+        }
+
         const type = this.constructor.propTypes[name];
+
+        if(!type) {
+            throw new Error(`PropType for property ${name} has not been specified.`);
+        }
 
         this.props[name] = type(value);
     }
