@@ -38,7 +38,7 @@ const patchClassList = (node, oldClassList, newClassList) => {
         }
     }
 };
-const setProp = (node, key, value, isSvg = false) => {
+const setProp = (node, key, value) => {
     if (key === 'key') {
     }
     else if (value == null || value === false) {
@@ -48,16 +48,14 @@ const setProp = (node, key, value, isSvg = false) => {
         patchStyles(node, {}, value);
     }
     else {
-        if (isSvg) {
-            if (EVENT_LISTENER_RGX.test(key)) {
-                node[key] = value;
-            }
-            else {
-                node.setAttribute(key, value);
-            }
+        if (EVENT_LISTENER_RGX.test(key)) {
+            node[key] = value;
+        }
+        else if (key === 'value') {
+            node.value = value;
         }
         else {
-            node[key] = value;
+            node.setAttribute(key, value);
         }
     }
 };
@@ -75,7 +73,7 @@ const createDomNode = (vnode) => {
         ? document.createElementNS(SVG_NS, type)
         : document.createElement(type);
     for (const [key, value] of Object.entries(props)) {
-        setProp(node, key, value, vnode.isSvg);
+        setProp(node, key, value);
     }
     if (children.length) {
         const fragment = document.createDocumentFragment();
@@ -125,7 +123,7 @@ const patchProps = (node, oldProps, newProps, isSvg = false) => {
                     patchStyles(node, oldValue, value);
                 }
                 else {
-                    setProp(node, key, value, isSvg);
+                    setProp(node, key, value);
                 }
             }
         }
