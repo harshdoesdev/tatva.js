@@ -9,7 +9,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var _Component_instances, _Component_frameRequest, _Component_oldTree, _Component_update, _Component_requestUpdate, _Component_updateProp;
+var _Component_instances, _Component_currentState, _Component_frameRequest, _Component_oldTree, _Component_update, _Component_requestUpdate, _Component_updateProp;
 import { deepFreeze, isFn } from "./util.js";
 import { patch } from "./vdom.js";
 export default class Component extends HTMLElement {
@@ -17,7 +17,7 @@ export default class Component extends HTMLElement {
         super();
         _Component_instances.add(this);
         this.props = {};
-        this.state = null;
+        _Component_currentState.set(this, null);
         _Component_frameRequest.set(this, null);
         _Component_oldTree.set(this, null);
         _Component_update.set(this, () => {
@@ -31,13 +31,19 @@ export default class Component extends HTMLElement {
         });
         this.rootNode = this;
     }
+    set state(newState) {
+        __classPrivateFieldSet(this, _Component_currentState, deepFreeze(newState), "f");
+    }
+    get state() {
+        return __classPrivateFieldGet(this, _Component_currentState, "f");
+    }
     setState(newState) {
         const nextState = isFn(newState) ? newState(this.state) : newState;
-        this.state = deepFreeze(nextState);
+        this.state = nextState;
         __classPrivateFieldGet(this, _Component_instances, "m", _Component_requestUpdate).call(this);
     }
     connectedCallback() {
-        __classPrivateFieldGet(this, _Component_update, "f").call(this);
+        __classPrivateFieldGet(this, _Component_instances, "m", _Component_requestUpdate).call(this);
         this.componentDidConnect();
     }
     disconnectedCallback() {
@@ -55,7 +61,7 @@ export default class Component extends HTMLElement {
     componentDidDisconnect() { }
     render(_state) { }
 }
-_Component_frameRequest = new WeakMap(), _Component_oldTree = new WeakMap(), _Component_update = new WeakMap(), _Component_instances = new WeakSet(), _Component_requestUpdate = function _Component_requestUpdate() {
+_Component_currentState = new WeakMap(), _Component_frameRequest = new WeakMap(), _Component_oldTree = new WeakMap(), _Component_update = new WeakMap(), _Component_instances = new WeakSet(), _Component_requestUpdate = function _Component_requestUpdate() {
     if (__classPrivateFieldGet(this, _Component_frameRequest, "f")) {
         cancelAnimationFrame(__classPrivateFieldGet(this, _Component_frameRequest, "f"));
     }

@@ -6,11 +6,19 @@ export default class Component extends HTMLElement {
 
     props = {}
 
-    state = null
+    #currentState = null
 
     #frameRequest = null
 
     #oldTree = null
+
+    set state(newState) {
+        this.#currentState = deepFreeze(newState);
+    }
+
+    get state() {
+        return this.#currentState;
+    }
 
     constructor() {
         super();
@@ -21,8 +29,8 @@ export default class Component extends HTMLElement {
     setState(newState) {
         const nextState = isFn(newState) ? newState(this.state) : newState;
 
-        this.state = deepFreeze(nextState);
-        
+        this.state = nextState;
+
         this.#requestUpdate();
     }
 
@@ -63,7 +71,7 @@ export default class Component extends HTMLElement {
     }
 
     connectedCallback() {
-        this.#update();
+        this.#requestUpdate();
 
         this.componentDidConnect();
     }

@@ -1,6 +1,7 @@
 export default class Component extends HTMLElement {
     props: {};
-    state: any;
+    set state(arg: any);
+    get state(): any;
     rootNode: Component;
     setState(newState: any): void;
     connectedCallback(): void;
