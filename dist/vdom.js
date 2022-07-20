@@ -2,8 +2,17 @@ import { kindOf } from "./util.js";
 const TEXT_NODE = '#text';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const EVENT_LISTENER_RGX = /^on/;
-export const h = (type, props, ...children) => ({ type, props, children });
-export const svg = (type, props, ...children) => ({ type, props, children, isSvg: true });
+export const h = (type, props, ...children) => ({
+    type,
+    props,
+    children: children.flat()
+});
+export const svg = (type, props, ...children) => ({
+    type,
+    props,
+    children: children.flat(),
+    isSvg: true
+});
 export const text = data => ({ type: TEXT_NODE, data });
 const propIsCSSVar = v => v[0] === '-' && v[1] === '-';
 const patchStyles = (node, oldStyles, newStyles) => {
