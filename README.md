@@ -1,13 +1,12 @@
-![Tatva.js](https://github.com/rare-earth/tatva.js/raw/main/tatva-banner.png)
-
 # tatva.js
 Tatva (Sanskrit word "तत्त्व", meaning "Element") is a Web Component Framework.
 
 ## Installation
+**NPM**
 ```bash
 npm i tatva
 ```
-**or**
+**CDN**
 ```javascript
 import { Component, h, text } from "https://unpkg.com/tatva@latest";
 
@@ -20,19 +19,15 @@ import { Component, h, text } from "https://unpkg.com/tatva@latest";
 
 class TodoApp extends Component {
 
-    constructor() {
-        super();
-
-        this.state = {
-            todo: '',
-            todos: []
-        };
+    state = {
+        todo: '',
+        todos: []
     }
 
-    setTodo(e) {
+    setTodo(todo) {
         this.setState(state => ({
             ...state,
-            todo: e.target.value
+            todo
         }))
     }
 
@@ -62,7 +57,7 @@ class TodoApp extends Component {
             h('main', {},
                 h('form', { onsubmit: e => this.handleFormSubmit(e) },
                     h('input', {
-                        oninput: e => this.setTodo(e),
+                        oninput: e => this.setTodo(e.target.value),
                         placeholder: 'Enter Todo',
                         value: this.state.todo
                     })
