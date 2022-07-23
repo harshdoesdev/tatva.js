@@ -144,7 +144,7 @@ const patchProps = (node, oldProps, newProps, isSvg = false) => {
             const oldValue = oldProps[key];
 
             if(oldValue !== value) {
-                if(key === 'className') {
+                if(key === 'class') {
                     patchClassList(
                         node, 
                         strToClassList(oldValue), 

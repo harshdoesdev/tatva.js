@@ -116,7 +116,7 @@ const patchProps = (node, oldProps, newProps, isSvg = false) => {
         if (Reflect.has(newProps, key)) {
             const oldValue = oldProps[key];
             if (oldValue !== value) {
-                if (key === 'className') {
+                if (key === 'class') {
                     patchClassList(node, strToClassList(oldValue), strToClassList(value));
                 }
                 else if (key === 'style' && kindOf(value) !== 'string') {
