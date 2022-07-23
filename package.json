@@ -5,18 +5,26 @@
   "description": "A Tiny Toolkit For Web Components",
   "main": "dist/index.js",
   "scripts": {
-    "start": "tsc --watch",
-    "build": "tsc --build",
     "clean": "rm -rf dist",
+    "build": "rollup -c && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "web component",
-    "toolkit",
-    "template",
-    "sanitizer",
-    "css"
+    "framework",
+    "virtual-dom",
+    "vdom",
+    "reactive"
   ],
+  "devDependencies": {
+    "esbuild": "^0.14.38",
+    "rollup": "^2.71.1",
+    "rollup-plugin-dts": "^4.2.1",
+    "rollup-plugin-esbuild": "^4.9.1"
+  },
+  "dependencies": {
+    "typescript": "^4.6.4"
+  },
   "author": "Harsh Singh",
   "license": "MIT"
 }

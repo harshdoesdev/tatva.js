@@ -1,4 +1,4 @@
-import { kindOf } from "./util.js";
+import { kindOf } from "./util";
 
 const TEXT_NODE = '#text';
 
@@ -6,49 +6,28 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const EVENT_LISTENER_RGX = /^on/;
 
-export const h = (type, props, ...children) => ({ type, props, children });
+interface VNode {
+    type: string,
+    props: {},
+    children: VNode[]
+}
 
-export const svg = (type, props, ...children) => ({ type, props, children, isSvg: true });
+interface VSVGNode extends VNode {
+    isSvg: boolean
+}
 
-export const text = data => ({ type: TEXT_NODE, data });
+interface VTextNode {
+    type: string,
+    data: any
+}
 
-const propIsCSSVar = v => v[0] === '-' && v[1] === '-';
+export const h = (type: string, props: any, ...children: any[]): VNode => ({ type, props, children });
 
-const patchStyles = (node, oldStyles, newStyles) => {
-    const styles = { ...oldStyles, ...newStyles };
+export const svg = (type: string, props: any, ...children: any[]): VSVGNode => ({ type, props, children, isSvg: true });
 
-    for(const [prop, value] of Object.entries(styles)) {
-        const oldStyleValue = oldStyles[prop];
+export const text = (data: any): VTextNode => ({ type: TEXT_NODE, data });
 
-        if(newStyles[prop]) {
-            if(oldStyleValue !== value) {
-                if(propIsCSSVar(prop)) {
-                    node.style.setProperty(prop, value);
-                } else {
-                    node.style[prop] = value;
-                }
-            }
-        } else {
-            node.style.removeProperty(prop);
-        }
-    }
-};
-
-const strToClassList = str => str.trim().split(/\s+/);
-
-const patchClassList = (node, oldClassList, newClassList) => {
-    const classes = [...oldClassList, ...newClassList];
-
-    for(let i = 0; i < classes.length; i++) {
-        const className = classes[i];
-
-        if(!oldClassList.includes(className)) {
-            node.classList.add(className);
-        } else if(!newClassList.includes(className)) {
-            node.classList.remove(className);
-        }
-    }
-};
+const strToClassList = (str: any) => str.trim().split(/\s+/);
 
 const setProp = (node, key, value) => {
     if(key === 'key') {
@@ -110,6 +89,40 @@ const createDomNode = (vnode) => {
     vnode.node = node;
 
     return node;
+};
+
+const patchStyles = (node, oldStyles, newStyles) => {
+    const styles = { ...oldStyles, ...newStyles };
+
+    for(const [prop, value] of Object.entries(styles)) {
+        const oldStyleValue = oldStyles[prop];
+
+        if(newStyles[prop]) {
+            if(oldStyleValue !== value) {
+                if(prop[0] === '-') {
+                    node.style.setProperty(prop, value);
+                } else {
+                    node.style[prop] = value;
+                }
+            }
+        } else {
+            node.style.removeProperty(prop);
+        }
+    }
+};
+
+const patchClassList = (node, oldClassList, newClassList) => {
+    const classes = [...oldClassList, ...newClassList];
+
+    for(let i = 0; i < classes.length; i++) {
+        const className = classes[i];
+
+        if(!oldClassList.includes(className)) {
+            node.classList.add(className);
+        } else if(!newClassList.includes(className)) {
+            node.classList.remove(className);
+        }
+    }
 };
 
 const patchChildren = (node, oldChildren, newChildren) => {

@@ -1,6 +1,6 @@
-import { deepFreeze, isFn } from "./util.js";
+import { deepFreeze, isFn } from "./util";
 
-import { patch } from "./vdom.js";
+import { patch } from "./vdom";
 
 export default class Component extends HTMLElement {
 
@@ -11,6 +11,10 @@ export default class Component extends HTMLElement {
     #frameRequest = null
 
     #oldTree = null
+
+    rootNode: this | ShadowRoot;
+
+    static propTypes: any;
 
     set state(newState) {
         this.#currentState = deepFreeze(newState);
@@ -26,7 +30,7 @@ export default class Component extends HTMLElement {
         this.rootNode = this;
     }
 
-    setState(newState) {
+    setState(newState: any) {
         const nextState = isFn(newState) ? newState(this.state) : newState;
 
         this.state = nextState;
@@ -38,7 +42,7 @@ export default class Component extends HTMLElement {
         const attributes = Array.from(this.attributes);
 
         for(const { name, value } of attributes) {
-            this.#updateProp(name, value)
+            this.#updateProp(name, value);
         }
 
         const newTree = this.render(this.state, this.props);
@@ -56,12 +60,12 @@ export default class Component extends HTMLElement {
         this.#frameRequest = requestAnimationFrame(this.#update);
     }
 
-    #updateProp(name, value) {
-        if(!this.constructor.propTypes) {
+    #updateProp(name: string, value: string | null) {
+        if(!(this.constructor as typeof Component).propTypes) {
             throw new Error(`No PropTypes have been defined.`);
         }
 
-        const type = this.constructor.propTypes[name];
+        const type = (this.constructor as typeof Component).propTypes[name];
 
         if(!type) {
             throw new Error(`PropType for property ${name} has not been specified.`);
@@ -82,12 +86,12 @@ export default class Component extends HTMLElement {
         this.componentDidDisconnect();
     }
 
-    attributeChangedCallback(propName, prevValue, newValue) {
+    attributeChangedCallback(propName: string, prevValue: string | null, newValue: string | null) {
         if(newValue === prevValue) {
             return;
         }
 
-        this.#updateProp(propName, newValue, prevValue);
+        this.#updateProp(propName, newValue);
 
         this.#requestUpdate();
     }
@@ -96,6 +100,6 @@ export default class Component extends HTMLElement {
 
     componentDidDisconnect() {}
 
-    render(_state) {}
+    render(_state: any, _props: any) {}
 
 }
