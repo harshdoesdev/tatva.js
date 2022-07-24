@@ -225,6 +225,7 @@ class Component extends HTMLElement {
   componentDidDisconnect() {
   }
   render(_state, _props) {
+    throw new Error("render method has not been defined.");
   }
 }
 

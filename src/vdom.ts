@@ -9,7 +9,8 @@ const EVENT_LISTENER_RGX = /^on/;
 interface VNode {
     type: string,
     props: {},
-    children: VNode[]
+    children: VNode[],
+    node?: Node
 }
 
 interface VSVGNode extends VNode {
@@ -18,7 +19,8 @@ interface VSVGNode extends VNode {
 
 interface VTextNode {
     type: string,
-    data: any
+    data: any,
+    node?: Text
 }
 
 export const h = (type: string, props: any, ...children: any[]): VNode => ({ type, props, children });

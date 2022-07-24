@@ -2,6 +2,8 @@ import { deepFreeze, isFn } from "./util";
 
 import { patch } from "./vdom";
 
+type stringOrNull = string | null;
+
 export default class Component extends HTMLElement {
 
     props = {}
@@ -60,7 +62,7 @@ export default class Component extends HTMLElement {
         this.#frameRequest = requestAnimationFrame(this.#update);
     }
 
-    #updateProp(name: string, value: string | null) {
+    #updateProp(name: string, value: stringOrNull) {
         if(!(this.constructor as typeof Component).propTypes) {
             throw new Error(`No PropTypes have been defined.`);
         }
@@ -86,7 +88,7 @@ export default class Component extends HTMLElement {
         this.componentDidDisconnect();
     }
 
-    attributeChangedCallback(propName: string, prevValue: string | null, newValue: string | null) {
+    attributeChangedCallback(propName: string, prevValue: stringOrNull, newValue: stringOrNull) {
         if(newValue === prevValue) {
             return;
         }
@@ -100,6 +102,8 @@ export default class Component extends HTMLElement {
 
     componentDidDisconnect() {}
 
-    render(_state: any, _props: any) {}
+    render(_state: any, _props: any) {
+        throw new Error('render method has not been defined.');
+    }
 
 }
