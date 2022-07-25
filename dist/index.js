@@ -17,7 +17,9 @@ const svg = (type, props, ...children) => ({ type, props, children, isSvg: true 
 const text = (data) => ({ type: TEXT_NODE, data });
 const strToClassList = (str) => str.trim().split(/\s+/);
 const setProp = (node, key, value) => {
-  if (key === "key") ; else if (value == null || value === false) {
+  if (key === "key") ; else if (key === "ref") {
+    value(node);
+  } else if (value == null || value === false) {
     node.removeAttribute(key);
   } else if (key === "style" && kindOf(value) !== "string") {
     patchStyles(node, {}, value);
@@ -106,7 +108,7 @@ const patchChildren = (node, oldChildren, newChildren) => {
     }
   }
 };
-const patchProps = (node, oldProps, newProps, isSvg = false) => {
+const patchProps = (node, oldProps, newProps) => {
   const props = { ...oldProps, ...newProps };
   for (const [key, value] of Object.entries(props)) {
     if (Reflect.has(newProps, key)) {
@@ -148,7 +150,7 @@ const patch = (rootNode, oldTree, newTree) => {
       }
     } else if (oldTree.key === newTree.key) {
       patchChildren(oldTree.node, oldTree.children, newTree.children);
-      patchProps(oldTree.node, oldTree.props, newTree.props, newTree.isSvg);
+      patchProps(oldTree.node, oldTree.props, newTree.props);
     }
     newTree.node = oldTree.node;
   } else {
@@ -157,6 +159,10 @@ const patch = (rootNode, oldTree, newTree) => {
     destroyVNode(oldTree);
   }
 };
+
+function createRef(current = null) {
+  return { current };
+}
 
 class Component extends HTMLElement {
   props = {};
@@ -229,5 +235,5 @@ class Component extends HTMLElement {
   }
 }
 
-export { Component, h, svg, text };
+export { Component, createRef, h, svg, text };
 //# sourceMappingURL=index.js.map

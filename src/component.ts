@@ -1,3 +1,5 @@
+import { VNode, VText } from "./types";
+
 import { deepFreeze, isFn } from "./util";
 
 import { patch } from "./vdom";
@@ -102,7 +104,7 @@ export default class Component extends HTMLElement {
 
     componentDidDisconnect() {}
 
-    render(_state: any, _props: any) {
+    render(_state: any, _props: any): VNode|VText|null {
         throw new Error('render method has not been defined.');
     }
 

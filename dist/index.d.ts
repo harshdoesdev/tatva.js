@@ -2,19 +2,23 @@ interface VNode {
     type: string;
     props: {};
     children: VNode[];
-    node?: Node;
+    node?: HTMLElement | SVGElement;
+    isSvg?: boolean;
+    key?: any;
 }
-interface VSVGNode extends VNode {
-    isSvg: boolean;
-}
-interface VTextNode {
+interface VText {
     type: string;
     data: any;
     node?: Text;
 }
+
 declare const h: (type: string, props: any, ...children: any[]) => VNode;
-declare const svg: (type: string, props: any, ...children: any[]) => VSVGNode;
-declare const text: (data: any) => VTextNode;
+declare const svg: (type: string, props: any, ...children: any[]) => VNode;
+declare const text: (data: any) => VText;
+
+declare function createRef(current?: any): {
+    current: any;
+};
 
 declare type stringOrNull = string | null;
 declare class Component extends HTMLElement {
@@ -31,7 +35,7 @@ declare class Component extends HTMLElement {
     attributeChangedCallback(propName: string, prevValue: stringOrNull, newValue: stringOrNull): void;
     componentDidConnect(): void;
     componentDidDisconnect(): void;
-    render(_state: any, _props: any): void;
+    render(_state: any, _props: any): VNode | VText | null;
 }
 
-export { Component, h, svg, text };
+export { Component, createRef, h, svg, text };
