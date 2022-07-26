@@ -34,21 +34,7 @@ export default class Component extends HTMLElement {
         this.rootNode = this;
     }
 
-    setState(newState: any) {
-        const nextState = isFn(newState) ? newState(this.state) : newState;
-
-        this.state = nextState;
-
-        this.#requestUpdate();
-    }
-
-    #update = () => {
-        const attributes = Array.from(this.attributes);
-
-        for(const { name, value } of attributes) {
-            this.#updateProp(name, value);
-        }
-
+    #reRender = () => {
         const newTree = this.render(this.state, this.props);
 
         patch(this.rootNode, this.#oldTree, newTree);
@@ -56,12 +42,28 @@ export default class Component extends HTMLElement {
         this.#oldTree = newTree;
     }
 
-    #requestUpdate() {
+    #requestReRender() {
         if(this.#frameRequest) {
             cancelAnimationFrame(this.#frameRequest);
         }
 
-        this.#frameRequest = requestAnimationFrame(this.#update);
+        this.#frameRequest = requestAnimationFrame(this.#reRender);
+    }
+
+    setState(newState: any) {
+        const nextState = isFn(newState) ? newState(this.state) : newState;
+
+        this.state = nextState;
+
+        this.#requestReRender();
+    }
+
+    #updateProps() {
+        const attributes = Array.from(this.attributes);
+
+        for(const { name, value } of attributes) {
+            this.#updateProp(name, value);
+        }
     }
 
     #updateProp(name: string, value: stringOrNull) {
@@ -79,7 +81,9 @@ export default class Component extends HTMLElement {
     }
 
     connectedCallback() {
-        this.#requestUpdate();
+        this.#updateProps();
+
+        this.#requestReRender();
 
         this.componentDidConnect();
     }
@@ -97,14 +101,14 @@ export default class Component extends HTMLElement {
 
         this.#updateProp(propName, newValue);
 
-        this.#requestUpdate();
+        this.#requestReRender();
     }
 
     componentDidConnect() {}
 
     componentDidDisconnect() {}
 
-    render(_state: any, _props: any): VNode|VText|null {
+    render(_state: any, _props: any): VNode|VText {
         throw new Error('render method has not been defined.');
     }
 

@@ -181,25 +181,27 @@ class Component extends HTMLElement {
     super();
     this.rootNode = this;
   }
-  setState(newState) {
-    const nextState = isFn(newState) ? newState(this.state) : newState;
-    this.state = nextState;
-    this.#requestUpdate();
-  }
-  #update = () => {
-    const attributes = Array.from(this.attributes);
-    for (const { name, value } of attributes) {
-      this.#updateProp(name, value);
-    }
+  #reRender = () => {
     const newTree = this.render(this.state, this.props);
     patch(this.rootNode, this.#oldTree, newTree);
     this.#oldTree = newTree;
   };
-  #requestUpdate() {
+  #requestReRender() {
     if (this.#frameRequest) {
       cancelAnimationFrame(this.#frameRequest);
     }
-    this.#frameRequest = requestAnimationFrame(this.#update);
+    this.#frameRequest = requestAnimationFrame(this.#reRender);
+  }
+  setState(newState) {
+    const nextState = isFn(newState) ? newState(this.state) : newState;
+    this.state = nextState;
+    this.#requestReRender();
+  }
+  #updateProps() {
+    const attributes = Array.from(this.attributes);
+    for (const { name, value } of attributes) {
+      this.#updateProp(name, value);
+    }
   }
   #updateProp(name, value) {
     if (!this.constructor.propTypes) {
@@ -212,7 +214,8 @@ class Component extends HTMLElement {
     this.props[name] = type(value);
   }
   connectedCallback() {
-    this.#requestUpdate();
+    this.#updateProps();
+    this.#requestReRender();
     this.componentDidConnect();
   }
   disconnectedCallback() {
@@ -224,7 +227,7 @@ class Component extends HTMLElement {
       return;
     }
     this.#updateProp(propName, newValue);
-    this.#requestUpdate();
+    this.#requestReRender();
   }
   componentDidConnect() {
   }

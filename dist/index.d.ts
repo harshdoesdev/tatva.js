@@ -35,7 +35,7 @@ declare class Component extends HTMLElement {
     attributeChangedCallback(propName: string, prevValue: stringOrNull, newValue: stringOrNull): void;
     componentDidConnect(): void;
     componentDidDisconnect(): void;
-    render(_state: any, _props: any): VNode | VText | null;
+    render(_state: any, _props: any): VNode | VText;
 }
 
 export { Component, createRef, h, svg, text };
