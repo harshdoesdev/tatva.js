@@ -11,6 +11,7 @@ interface VText {
     data: any;
     node?: Text;
 }
+declare type stringOrNull = string | null;
 
 declare const h: (type: string, props: any, ...children: any[]) => VNode;
 declare const svg: (type: string, props: any, ...children: any[]) => VNode;
@@ -20,7 +21,6 @@ declare function createRef(current?: any): {
     current: any;
 };
 
-declare type stringOrNull = string | null;
 declare class Component extends HTMLElement {
     #private;
     props: {};
@@ -30,11 +30,16 @@ declare class Component extends HTMLElement {
     get state(): any;
     constructor();
     setState(newState: any): void;
-    connectedCallback(): void;
+    connectedCallback(): Promise<void>;
     disconnectedCallback(): void;
-    attributeChangedCallback(propName: string, prevValue: stringOrNull, newValue: stringOrNull): void;
+    attributeChangedCallback(propName: string, oldValue: stringOrNull, newValue: stringOrNull): void;
     componentDidConnect(): void;
     componentDidDisconnect(): void;
+    componentWillLoad(): Promise<void>;
+    componentDidLoad(): void;
+    componentShouldUpdate(_oldValue?: any, _newValue?: any, _propName?: string): void;
+    componentWillRender(): Promise<void>;
+    componentDidRender(): void;
     render(_state: any, _props: any): VNode | VText;
 }
 

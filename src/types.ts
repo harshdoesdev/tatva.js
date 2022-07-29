@@ -12,3 +12,5 @@ export interface VText {
     data: any,
     node?: Text
 }
+
+export type stringOrNull = string | null;

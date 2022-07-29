@@ -169,6 +169,8 @@ class Component extends HTMLElement {
   #currentState = null;
   #frameRequest = null;
   #oldTree = null;
+  #hasLoaded = false;
+  #hasRendered = false;
   rootNode;
   static propTypes;
   set state(newState) {
@@ -181,10 +183,12 @@ class Component extends HTMLElement {
     super();
     this.rootNode = this;
   }
-  #reRender = () => {
+  #reRender = async () => {
+    await this.componentWillRender();
     const newTree = this.render(this.state, this.props);
     patch(this.rootNode, this.#oldTree, newTree);
     this.#oldTree = newTree;
+    this.componentDidRender();
   };
   #requestReRender() {
     if (this.#frameRequest) {
@@ -193,6 +197,7 @@ class Component extends HTMLElement {
     this.#frameRequest = requestAnimationFrame(this.#reRender);
   }
   setState(newState) {
+    this.componentShouldUpdate();
     const nextState = isFn(newState) ? newState(this.state) : newState;
     this.state = nextState;
     this.#requestReRender();
@@ -211,19 +216,27 @@ class Component extends HTMLElement {
     if (!type) {
       throw new Error(`PropType for property ${name} has not been specified.`);
     }
-    this.props[name] = type(value);
+    const oldValue = this.props[name];
+    const newValue = type(value);
+    this.componentShouldUpdate(oldValue, newValue, name);
+    this.props[name] = newValue;
   }
-  connectedCallback() {
+  async connectedCallback() {
     this.#updateProps();
+    if (!this.#hasLoaded) {
+      this.#hasLoaded = true;
+      await this.componentWillLoad();
+    }
     this.#requestReRender();
+    this.componentDidLoad();
     this.componentDidConnect();
   }
   disconnectedCallback() {
     patch(this.rootNode, this.#oldTree, null);
     this.componentDidDisconnect();
   }
-  attributeChangedCallback(propName, prevValue, newValue) {
-    if (newValue === prevValue) {
+  attributeChangedCallback(propName, oldValue, newValue) {
+    if (newValue === oldValue) {
       return;
     }
     this.#updateProp(propName, newValue);
@@ -232,6 +245,16 @@ class Component extends HTMLElement {
   componentDidConnect() {
   }
   componentDidDisconnect() {
+  }
+  async componentWillLoad() {
+  }
+  componentDidLoad() {
+  }
+  componentShouldUpdate(_oldValue, _newValue, _propName) {
+  }
+  async componentWillRender() {
+  }
+  componentDidRender() {
   }
   render(_state, _props) {
     throw new Error("render method has not been defined.");

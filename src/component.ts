@@ -1,10 +1,8 @@
-import { VNode, VText } from "./types";
+import { VNode, VText, stringOrNull } from "./types";
 
 import { deepFreeze, isFn } from "./util";
 
 import { patch } from "./vdom";
-
-type stringOrNull = string | null;
 
 export default class Component extends HTMLElement {
 
@@ -15,6 +13,10 @@ export default class Component extends HTMLElement {
     #frameRequest = null
 
     #oldTree = null
+
+    #hasLoaded = false
+
+    #hasRendered = false
 
     rootNode: this | ShadowRoot;
 
@@ -34,12 +36,16 @@ export default class Component extends HTMLElement {
         this.rootNode = this;
     }
 
-    #reRender = () => {
+    #reRender = async () => {
+        await this.componentWillRender();
+
         const newTree = this.render(this.state, this.props);
 
         patch(this.rootNode, this.#oldTree, newTree);
 
         this.#oldTree = newTree;
+
+        this.componentDidRender();
     }
 
     #requestReRender() {
@@ -51,6 +57,8 @@ export default class Component extends HTMLElement {
     }
 
     setState(newState: any) {
+        this.componentShouldUpdate();
+
         const nextState = isFn(newState) ? newState(this.state) : newState;
 
         this.state = nextState;
@@ -77,13 +85,27 @@ export default class Component extends HTMLElement {
             throw new Error(`PropType for property ${name} has not been specified.`);
         }
 
-        this.props[name] = type(value);
+        const oldValue = this.props[name];
+
+        const newValue = type(value);
+
+        this.componentShouldUpdate(oldValue, newValue, name);
+        
+        this.props[name] = newValue;
     }
 
-    connectedCallback() {
+    async connectedCallback() {
         this.#updateProps();
 
+        if(!this.#hasLoaded) {
+            this.#hasLoaded = true;
+
+            await this.componentWillLoad();
+        }
+
         this.#requestReRender();
+
+        this.componentDidLoad();
 
         this.componentDidConnect();
     }
@@ -94,11 +116,11 @@ export default class Component extends HTMLElement {
         this.componentDidDisconnect();
     }
 
-    attributeChangedCallback(propName: string, prevValue: stringOrNull, newValue: stringOrNull) {
-        if(newValue === prevValue) {
+    attributeChangedCallback(propName: string, oldValue: stringOrNull, newValue: stringOrNull) {
+        if(newValue === oldValue) {
             return;
         }
-
+        
         this.#updateProp(propName, newValue);
 
         this.#requestReRender();
@@ -107,6 +129,16 @@ export default class Component extends HTMLElement {
     componentDidConnect() {}
 
     componentDidDisconnect() {}
+
+    async componentWillLoad() {}
+
+    componentDidLoad() {}
+
+    componentShouldUpdate(_oldValue?: any, _newValue?: any, _propName?: string) {}
+
+    async componentWillRender() {}
+
+    componentDidRender() {}
 
     render(_state: any, _props: any): VNode|VText {
         throw new Error('render method has not been defined.');
