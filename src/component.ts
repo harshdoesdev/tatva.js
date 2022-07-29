@@ -1,4 +1,4 @@
-import { VNode, VText, stringOrNull } from "./types";
+import { VNode, stringOrNull } from "./types";
 
 import { deepFreeze, isFn } from "./util";
 
@@ -140,7 +140,7 @@ export default class Component extends HTMLElement {
 
     componentDidRender() {}
 
-    render(_state: any, _props: any): VNode|VText {
+    render(_state: any, _props: any): VNode {
         throw new Error('render method has not been defined.');
     }
 

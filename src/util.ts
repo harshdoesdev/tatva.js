@@ -11,3 +11,5 @@ export const deepFreeze = (obj: any) => {
 export const kindOf = (v: any) => typeof v;
 
 export const isFn = (v: any) => kindOf(v) === 'function';
+
+export const isStr = (v: any) => kindOf(v) === 'string';

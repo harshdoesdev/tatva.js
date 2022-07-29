@@ -8,17 +8,20 @@ const deepFreeze = (obj) => {
 };
 const kindOf = (v) => typeof v;
 const isFn = (v) => kindOf(v) === "function";
+const isStr = (v) => kindOf(v) === "string";
 
-const TEXT_NODE = "#text";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const EVENT_LISTENER_RGX = /^on/;
 const h = (type, props, ...children) => ({ type, props, children });
 const svg = (type, props, ...children) => ({ type, props, children, isSvg: true });
-const text = (data) => ({ type: TEXT_NODE, data });
 const strToClassList = (str) => str.trim().split(/\s+/);
 const setProp = (node, key, value) => {
   if (key === "key") ; else if (key === "ref") {
-    value(node);
+    if (isFn(value)) {
+      value(node);
+    } else {
+      value.current = node;
+    }
   } else if (value == null || value === false) {
     node.removeAttribute(key);
   } else if (key === "style" && kindOf(value) !== "string") {
@@ -37,9 +40,8 @@ const createDomNode = (vnode) => {
   if (!vnode) {
     return;
   }
-  if (vnode.type === TEXT_NODE) {
-    const textNode = document.createTextNode(vnode.data);
-    vnode.node = textNode;
+  if (isStr(vnode)) {
+    const textNode = document.createTextNode(vnode);
     return textNode;
   }
   const { type, props, children } = vnode;
@@ -95,10 +97,10 @@ const patchChildren = (node, oldChildren, newChildren) => {
   for (let i = 0; i < length; i++) {
     const oldChild = oldChildren[i];
     const newChild = newChildren[i];
+    const nodeChild = children[i];
     if (oldChild) {
-      patch(node, oldChild, newChild);
+      patch(node, oldChild, newChild, nodeChild);
     } else if (newChild) {
-      const nodeChild = children[i];
       const newChildNode = createDomNode(newChild);
       if (nodeChild) {
         node.insertBefore(newChildNode, nodeChild);
@@ -127,31 +129,30 @@ const patchProps = (node, oldProps, newProps) => {
     }
   }
 };
-const destroyVNode = (vnode) => {
-  if (vnode.type !== TEXT_NODE) {
-    let child;
-    while (child = vnode.node.lastChild) {
-      child.remove();
-    }
+const destroyVNode = (vnode, oldNode) => {
+  if (typeof vnode === "string") {
+    oldNode.remove();
+    return;
+  }
+  let child;
+  while (child = oldNode.lastChild) {
+    child.remove();
   }
   vnode.node.remove();
   vnode.node = null;
 };
-const patch = (rootNode, oldTree, newTree) => {
+const patch = (rootNode, oldTree, newTree, oldNode) => {
   if (!oldTree && newTree) {
     const node = createDomNode(newTree);
     rootNode.appendChild(node);
   } else if (!newTree) {
     destroyVNode(oldTree);
-  } else if (oldTree.type === newTree.type) {
-    if (oldTree.type === TEXT_NODE) {
-      if (oldTree.data !== newTree.data) {
-        oldTree.node.data = newTree.data;
-      }
-    } else if (oldTree.key === newTree.key) {
-      patchChildren(oldTree.node, oldTree.children, newTree.children);
-      patchProps(oldTree.node, oldTree.props, newTree.props);
-    }
+  } else if (isStr(oldTree) && isStr(newTree)) {
+    oldNode.data = newTree;
+  }
+  if (oldTree.type === newTree.type) {
+    patchChildren(oldTree.node, oldTree.children, newTree.children);
+    patchProps(oldTree.node, oldTree.props, newTree.props);
     newTree.node = oldTree.node;
   } else {
     const newNode = createDomNode(newTree);
@@ -261,5 +262,5 @@ class Component extends HTMLElement {
   }
 }
 
-export { Component, createRef, h, svg, text };
+export { Component, createRef, h, svg };
 //# sourceMappingURL=index.js.map

@@ -1,8 +1,6 @@
-import { VNode, VText } from "./types";
+import { stringOrNull, VNode } from "./types";
 
-import { kindOf } from "./util";
-
-const TEXT_NODE = '#text';
+import { isFn, isStr, kindOf } from "./util";
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -14,15 +12,17 @@ export const h = (type: string, props: any, ...children: any[]): VNode =>
 export const svg = (type: string, props: any, ...children: any[]): VNode => 
     ({ type, props, children, isSvg: true });
 
-export const text = (data: any): VText => ({ type: TEXT_NODE, data });
-
 const strToClassList = (str: any) => str.trim().split(/\s+/);
 
 const setProp = (node: Element, key: string, value: any) => {
     if(key === 'key') {
 
     } else if(key === 'ref') {
-        value(node);
+        if(isFn(value)) {
+            value(node);
+        } else {
+            value.current = node;
+        }
     } else if(value == null || value === false) {
         node.removeAttribute(key);
     } else if(key === 'style' && kindOf(value) !== 'string') {
@@ -38,15 +38,13 @@ const setProp = (node: Element, key: string, value: any) => {
     }
 };
 
-const createDomNode = (vnode: VNode|VText) => {
+const createDomNode = (vnode: VNode|stringOrNull) => {
     if(!vnode) {
         return;
     }
 
-    if(vnode.type === TEXT_NODE) {
-        const textNode = document.createTextNode((vnode as VText).data);
-        
-        vnode.node = textNode;
+    if(isStr(vnode)) {
+        const textNode = document.createTextNode(vnode as string);
 
         return textNode;
     }
@@ -107,7 +105,7 @@ const patchStyles = (
 };
 
 const patchClassList = (
-    node: HTMLElement | SVGElement, 
+    node: Element, 
     oldClassList: string[], 
     newClassList: string[]
 ) => {
@@ -125,9 +123,9 @@ const patchClassList = (
 };
 
 const patchChildren = (
-    node: HTMLElement | SVGElement, 
-    oldChildren: (VNode|VText)[], 
-    newChildren: (VNode|VText)[]
+    node: Element, 
+    oldChildren: (VNode|string)[], 
+    newChildren: (VNode|string)[]
 ) => {
     const children = Array.from(node.children);
 
@@ -137,10 +135,11 @@ const patchChildren = (
         const oldChild = oldChildren[i];
         const newChild = newChildren[i];
 
+        const nodeChild = children[i];
+
         if(oldChild) {
-            patch(node, oldChild, newChild);
+            patch(node, oldChild, newChild, nodeChild);
         } else if(newChild) {
-            const nodeChild = children[i];
             const newChildNode = createDomNode(newChild);
 
             if(nodeChild) {
@@ -182,12 +181,17 @@ const patchProps = (node: HTMLElement | SVGElement, oldProps: object, newProps: 
     }
 };
 
-const destroyVNode = (vnode: VNode|VText) => {
-    if(vnode.type !== TEXT_NODE) {
-        let child: ChildNode;
-        while(child = vnode.node.lastChild) {
-            child.remove();
-        }
+const destroyVNode = (vnode: VNode|string, oldNode?: Element|Text) => {
+    if(typeof vnode === 'string') {
+        oldNode.remove();
+
+        return;
+    }
+
+    let child: ChildNode;
+        
+    while(child = oldNode.lastChild) {
+        child.remove();
     }
 
     vnode.node.remove();
@@ -196,9 +200,10 @@ const destroyVNode = (vnode: VNode|VText) => {
 };
 
 export const patch = (
-    rootNode: HTMLElement|SVGElement|ShadowRoot, 
+    rootNode: Element|ShadowRoot, 
     oldTree: any, 
-    newTree: any
+    newTree: any,
+    oldNode?: Element|Text
 ) => {
     if(!oldTree && newTree) {
         const node = createDomNode(newTree);
@@ -206,24 +211,22 @@ export const patch = (
         rootNode.appendChild(node);
     } else if(!newTree) {
         destroyVNode(oldTree);
-    } else if(oldTree.type === newTree.type) {
-        if(oldTree.type === TEXT_NODE) {
-            if(oldTree.data !== newTree.data) {
-                oldTree.node.data = newTree.data;
-            }
-        } else if(oldTree.key === newTree.key) {
-            patchChildren(
-                oldTree.node as HTMLElement, 
-                oldTree.children, 
-                newTree.children
-            );
-    
-            patchProps(
-                oldTree.node, 
-                oldTree.props, 
-                newTree.props
-            );
-        }
+    } else if(isStr(oldTree) && isStr(newTree)) {
+        (oldNode as Text).data = newTree;
+    } if(oldTree.type === newTree.type) {
+        // TODO: Use key when patching
+
+        patchChildren(
+            oldTree.node as HTMLElement, 
+            oldTree.children, 
+            newTree.children
+        );
+
+        patchProps(
+            oldTree.node, 
+            oldTree.props, 
+            newTree.props
+        );
 
         newTree.node = oldTree.node;
     }  else {

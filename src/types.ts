@@ -7,10 +7,4 @@ export interface VNode {
     key?: any
 }
 
-export interface VText {
-    type: string,
-    data: any,
-    node?: Text
-}
-
 export type stringOrNull = string | null;

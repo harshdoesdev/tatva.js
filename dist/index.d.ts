@@ -6,16 +6,10 @@ interface VNode {
     isSvg?: boolean;
     key?: any;
 }
-interface VText {
-    type: string;
-    data: any;
-    node?: Text;
-}
 declare type stringOrNull = string | null;
 
 declare const h: (type: string, props: any, ...children: any[]) => VNode;
 declare const svg: (type: string, props: any, ...children: any[]) => VNode;
-declare const text: (data: any) => VText;
 
 declare function createRef(current?: any): {
     current: any;
@@ -40,7 +34,7 @@ declare class Component extends HTMLElement {
     componentShouldUpdate(_oldValue?: any, _newValue?: any, _propName?: string): void;
     componentWillRender(): Promise<void>;
     componentDidRender(): void;
-    render(_state: any, _props: any): VNode | VText;
+    render(_state: any, _props: any): VNode;
 }
 
-export { Component, createRef, h, svg, text };
+export { Component, createRef, h, svg };
