@@ -5,6 +5,7 @@ interface VNode {
     node?: HTMLElement | SVGElement;
     key?: any;
 }
+declare type Props = Record<string, any> | null;
 interface VText {
     type: string;
     data: string;
@@ -12,7 +13,7 @@ interface VText {
 }
 declare type stringOrNull = string | null;
 
-declare const h: (type: string, props: any, ...children: any[]) => VNode;
+declare const h: (type: string, props?: Props, ...children: any[]) => VNode;
 declare const text: (data: string) => {
     type: string;
     data: string;

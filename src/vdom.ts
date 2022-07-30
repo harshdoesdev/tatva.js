@@ -1,4 +1,4 @@
-import { VNode, VText } from "./types";
+import { Props, VNode, VText } from "./types";
 
 import { isFn, kindOf } from "./util";
 
@@ -8,7 +8,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const EVENT_LISTENER_RGX = /^on/;
 
-export const h = (type: string, props: any, ...children: any[]): VNode => 
+export const h = (type: string, props: Props = {}, ...children: any[]): VNode => 
     ({ type, props, children });
 
 export const text = (data: string) => ({ type: TEXT_NODE, data });

@@ -6,6 +6,8 @@ export interface VNode {
     key?: any
 }
 
+export type Props = Record<string, any> | null;
+
 export interface VText {
     type: string,
     data: string,
