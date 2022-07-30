@@ -12,7 +12,7 @@ const isFn = (v) => kindOf(v) === "function";
 const TEXT_NODE = "#text";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const EVENT_LISTENER_RGX = /^on/;
-const h = (type, props = {}, ...children) => ({ type, props, children });
+const h = (type, props, ...children) => ({ type, props, children });
 const text = (data) => ({ type: TEXT_NODE, data });
 const strToClassList = (str) => str.trim().split(/\s+/);
 const setProp = (node, key, value) => {
@@ -48,8 +48,10 @@ const createDomNode = (vnode, isSvg = false) => {
   const { type, props, children } = vnode;
   isSvg ||= type === "svg";
   const node = isSvg ? document.createElementNS(SVG_NS, type) : document.createElement(type);
-  for (const [key, value] of Object.entries(props)) {
-    setProp(node, key, value);
+  if (props) {
+    for (const [key, value] of Object.entries(props)) {
+      setProp(node, key, value);
+    }
   }
   if (children.length) {
     const fragment = document.createDocumentFragment();

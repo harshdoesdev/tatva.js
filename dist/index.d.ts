@@ -13,7 +13,7 @@ interface VText {
 }
 declare type stringOrNull = string | null;
 
-declare const h: (type: string, props?: Props, ...children: any[]) => VNode;
+declare const h: (type: string, props: Props, ...children: any[]) => VNode;
 declare const text: (data: string) => {
     type: string;
     data: string;

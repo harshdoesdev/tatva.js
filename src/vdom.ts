@@ -8,7 +8,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const EVENT_LISTENER_RGX = /^on/;
 
-export const h = (type: string, props: Props = {}, ...children: any[]): VNode => 
+export const h = (type: string, props: Props, ...children: any[]): VNode => 
     ({ type, props, children });
 
 export const text = (data: string) => ({ type: TEXT_NODE, data });
@@ -60,8 +60,10 @@ const createDomNode = (vnode: VNode|VText, isSvg = false) => {
         ? document.createElementNS(SVG_NS, type) 
         : document.createElement(type);
 
-    for(const [key, value] of Object.entries(props)) {
-        setProp(node, key, value);
+    if(props) {
+        for(const [key, value] of Object.entries(props)) {
+            setProp(node, key, value);
+        }
     }
 
     if(children.length) {
