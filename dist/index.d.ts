@@ -1,23 +1,22 @@
-interface VNode {
+interface VElement {
     type: string;
     props: {};
     children: VNode[];
     node?: HTMLElement | SVGElement;
     key?: any;
 }
-declare type Props = Record<string, any> | null;
+declare type VProps = Record<string, any> | null;
+declare type VChildren = VNode[];
 interface VText {
     type: string;
     data: string;
     node?: Text;
 }
+declare type VNode = VElement | VText | null;
 declare type stringOrNull = string | null;
 
-declare const h: (type: string, props: Props, ...children: any[]) => VNode;
-declare const text: (data: string) => {
-    type: string;
-    data: string;
-};
+declare const h: (type: string, props: VProps, ...children: VChildren) => VElement;
+declare const text: (data: string) => VText;
 
 declare function createRef(current?: any): {
     current: any;

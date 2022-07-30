@@ -1,4 +1,4 @@
-import { Props, VNode, VText } from "./types";
+import { VProps, VChildren, VNode, VElement, VText } from "./types";
 
 import { isFn, kindOf } from "./util";
 
@@ -8,10 +8,10 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const EVENT_LISTENER_RGX = /^on/;
 
-export const h = (type: string, props: Props, ...children: any[]): VNode => 
+export const h = (type: string, props: VProps, ...children: VChildren): VElement => 
     ({ type, props, children });
 
-export const text = (data: string) => ({ type: TEXT_NODE, data });
+export const text = (data: string): VText => ({ type: TEXT_NODE, data });
 
 const strToClassList = (str: any) => str.trim().split(/\s+/);
 
@@ -39,7 +39,7 @@ const setProp = (node: Element, key: string, value: any) => {
     }
 };
 
-const createDomNode = (vnode: VNode|VText, isSvg = false) => {
+const createDomNode = (vnode: VNode, isSvg = false) => {
     if(!vnode) {
         return;
     }
@@ -52,7 +52,7 @@ const createDomNode = (vnode: VNode|VText, isSvg = false) => {
         return textNode;
     }
 
-    const { type, props, children } = vnode as VNode;
+    const { type, props, children } = vnode as VElement;
 
     isSvg ||= type === 'svg';
     
@@ -69,7 +69,7 @@ const createDomNode = (vnode: VNode|VText, isSvg = false) => {
     if(children.length) {
         const fragment = document.createDocumentFragment();
 
-        children.forEach(vChild => {
+        children.forEach((vChild: VNode) => {
             if(!vChild) {
                 return;
             }
@@ -82,7 +82,7 @@ const createDomNode = (vnode: VNode|VText, isSvg = false) => {
         node.appendChild(fragment);
     }
 
-    (vnode as VNode).node = node;
+    vnode.node = node;
 
     return node;
 };
@@ -131,8 +131,8 @@ const patchClassList = (
 
 const patchChildren = (
     node: Element, 
-    oldChildren: (VNode|VText)[], 
-    newChildren: (VNode|VText)[],
+    oldChildren: VNode[], 
+    newChildren: VNode[],
     isSvg: boolean
 ) => {
     const children = Array.from(node.children);
@@ -189,7 +189,7 @@ const patchProps = (node: HTMLElement | SVGElement, oldProps: object, newProps: 
     }
 };
 
-const destroyVNode = (vnode: VNode|VText) => {
+const destroyVNode = (vnode: VNode) => {
     if(vnode.type !== TEXT_NODE) {
         let child: ChildNode;
         
@@ -203,10 +203,15 @@ const destroyVNode = (vnode: VNode|VText) => {
     vnode.node = null;
 };
 
+const isVText = (vnode: VNode): vnode is VText => 
+    vnode.type === TEXT_NODE && ('data' in vnode);
+
+const isVElement = (vnode: VNode): vnode is VElement => vnode.type !== TEXT_NODE;
+
 export const patch = (
     rootNode: Element|ShadowRoot, 
-    oldTree: any, 
-    newTree: any,
+    oldTree: VNode, 
+    newTree: VNode,
     isSvg: boolean = false
 ) => {
     if(!oldTree && newTree) {
@@ -216,11 +221,11 @@ export const patch = (
     } else if(!newTree) {
         destroyVNode(oldTree);
     } else if(oldTree.type === newTree.type) {
-        if(oldTree.type === TEXT_NODE) {
+        if(isVText(oldTree) && isVText(newTree)) {
             if(oldTree.data !== newTree.data) {
                 oldTree.node.data = newTree.data;
             }
-        } else if(oldTree.key === newTree.key) {
+        } else if(isVElement(oldTree) && isVElement(newTree)) {
             patchChildren(
                 oldTree.node, 
                 oldTree.children, 

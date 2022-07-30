@@ -143,6 +143,8 @@ const destroyVNode = (vnode) => {
   vnode.node.remove();
   vnode.node = null;
 };
+const isVText = (vnode) => vnode.type === TEXT_NODE && "data" in vnode;
+const isVElement = (vnode) => vnode.type !== TEXT_NODE;
 const patch = (rootNode, oldTree, newTree, isSvg = false) => {
   if (!oldTree && newTree) {
     const node = createDomNode(newTree, isSvg);
@@ -150,11 +152,11 @@ const patch = (rootNode, oldTree, newTree, isSvg = false) => {
   } else if (!newTree) {
     destroyVNode(oldTree);
   } else if (oldTree.type === newTree.type) {
-    if (oldTree.type === TEXT_NODE) {
+    if (isVText(oldTree) && isVText(newTree)) {
       if (oldTree.data !== newTree.data) {
         oldTree.node.data = newTree.data;
       }
-    } else if (oldTree.key === newTree.key) {
+    } else if (isVElement(oldTree) && isVElement(newTree)) {
       patchChildren(oldTree.node, oldTree.children, newTree.children, isSvg);
       patchProps(oldTree.node, oldTree.props, newTree.props);
     }
