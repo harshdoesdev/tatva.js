@@ -1,6 +1,8 @@
-import { stringOrNull, VNode } from "./types";
+import { VNode, VText } from "./types";
 
-import { isFn, isStr, kindOf } from "./util";
+import { isFn, kindOf } from "./util";
+
+const TEXT_NODE = '#text';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -9,8 +11,7 @@ const EVENT_LISTENER_RGX = /^on/;
 export const h = (type: string, props: any, ...children: any[]): VNode => 
     ({ type, props, children });
 
-export const svg = (type: string, props: any, ...children: any[]): VNode => 
-    ({ type, props, children, isSvg: true });
+export const text = (data: string) => ({ type: TEXT_NODE, data });
 
 const strToClassList = (str: any) => str.trim().split(/\s+/);
 
@@ -38,20 +39,24 @@ const setProp = (node: Element, key: string, value: any) => {
     }
 };
 
-const createDomNode = (vnode: VNode|stringOrNull) => {
+const createDomNode = (vnode: VNode|VText, isSvg = false) => {
     if(!vnode) {
         return;
     }
 
-    if(isStr(vnode)) {
-        const textNode = document.createTextNode(vnode as string);
+    if(vnode.type === TEXT_NODE) {
+        const textNode = document.createTextNode((vnode as VText).data);
+
+        vnode.node = textNode;
 
         return textNode;
     }
 
     const { type, props, children } = vnode as VNode;
 
-    const node = (vnode as VNode).isSvg 
+    isSvg ||= type === 'svg';
+    
+    const node = isSvg 
         ? document.createElementNS(SVG_NS, type) 
         : document.createElement(type);
 
@@ -67,7 +72,7 @@ const createDomNode = (vnode: VNode|stringOrNull) => {
                 return;
             }
 
-            const childNode = createDomNode(vChild);
+            const childNode = createDomNode(vChild, isSvg);
 
             fragment.appendChild(childNode);
         });
@@ -124,8 +129,9 @@ const patchClassList = (
 
 const patchChildren = (
     node: Element, 
-    oldChildren: (VNode|string)[], 
-    newChildren: (VNode|string)[]
+    oldChildren: (VNode|VText)[], 
+    newChildren: (VNode|VText)[],
+    isSvg: boolean
 ) => {
     const children = Array.from(node.children);
 
@@ -135,12 +141,12 @@ const patchChildren = (
         const oldChild = oldChildren[i];
         const newChild = newChildren[i];
 
-        const nodeChild = children[i];
-
         if(oldChild) {
-            patch(node, oldChild, newChild, nodeChild);
+            patch(node, oldChild, newChild, isSvg);
         } else if(newChild) {
             const newChildNode = createDomNode(newChild);
+
+            const nodeChild = children[i];
 
             if(nodeChild) {
                 node.insertBefore(newChildNode, nodeChild);
@@ -181,17 +187,13 @@ const patchProps = (node: HTMLElement | SVGElement, oldProps: object, newProps: 
     }
 };
 
-const destroyVNode = (vnode: VNode|string, oldNode?: Element|Text) => {
-    if(typeof vnode === 'string') {
-        oldNode.remove();
-
-        return;
-    }
-
-    let child: ChildNode;
+const destroyVNode = (vnode: VNode|VText) => {
+    if(vnode.type !== TEXT_NODE) {
+        let child: ChildNode;
         
-    while(child = oldNode.lastChild) {
-        child.remove();
+        while(child = vnode.node.lastChild) {
+            child.remove();
+        }    
     }
 
     vnode.node.remove();
@@ -203,34 +205,37 @@ export const patch = (
     rootNode: Element|ShadowRoot, 
     oldTree: any, 
     newTree: any,
-    oldNode?: Element|Text
+    isSvg: boolean = false
 ) => {
     if(!oldTree && newTree) {
-        const node = createDomNode(newTree);
+        const node = createDomNode(newTree, isSvg);
 
         rootNode.appendChild(node);
     } else if(!newTree) {
         destroyVNode(oldTree);
-    } else if(isStr(oldTree) && isStr(newTree)) {
-        (oldNode as Text).data = newTree;
-    } if(oldTree.type === newTree.type) {
-        // TODO: Use key when patching
-
-        patchChildren(
-            oldTree.node as HTMLElement, 
-            oldTree.children, 
-            newTree.children
-        );
-
-        patchProps(
-            oldTree.node, 
-            oldTree.props, 
-            newTree.props
-        );
+    } else if(oldTree.type === newTree.type) {
+        if(oldTree.type === TEXT_NODE) {
+            if(oldTree.data !== newTree.data) {
+                oldTree.node.data = newTree.data;
+            }
+        } else if(oldTree.key === newTree.key) {
+            patchChildren(
+                oldTree.node, 
+                oldTree.children, 
+                newTree.children,
+                isSvg
+            );
+    
+            patchProps(
+                oldTree.node, 
+                oldTree.props, 
+                newTree.props
+            );
+        }
 
         newTree.node = oldTree.node;
     }  else {
-        const newNode = createDomNode(newTree);
+        const newNode = createDomNode(newTree, isSvg);
 
         rootNode.insertBefore(newNode, oldTree.node);
 

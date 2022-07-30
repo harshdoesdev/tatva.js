@@ -8,12 +8,12 @@ const deepFreeze = (obj) => {
 };
 const kindOf = (v) => typeof v;
 const isFn = (v) => kindOf(v) === "function";
-const isStr = (v) => kindOf(v) === "string";
 
+const TEXT_NODE = "#text";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const EVENT_LISTENER_RGX = /^on/;
 const h = (type, props, ...children) => ({ type, props, children });
-const svg = (type, props, ...children) => ({ type, props, children, isSvg: true });
+const text = (data) => ({ type: TEXT_NODE, data });
 const strToClassList = (str) => str.trim().split(/\s+/);
 const setProp = (node, key, value) => {
   if (key === "key") ; else if (key === "ref") {
@@ -36,16 +36,18 @@ const setProp = (node, key, value) => {
     }
   }
 };
-const createDomNode = (vnode) => {
+const createDomNode = (vnode, isSvg = false) => {
   if (!vnode) {
     return;
   }
-  if (isStr(vnode)) {
-    const textNode = document.createTextNode(vnode);
+  if (vnode.type === TEXT_NODE) {
+    const textNode = document.createTextNode(vnode.data);
+    vnode.node = textNode;
     return textNode;
   }
   const { type, props, children } = vnode;
-  const node = vnode.isSvg ? document.createElementNS(SVG_NS, type) : document.createElement(type);
+  isSvg ||= type === "svg";
+  const node = isSvg ? document.createElementNS(SVG_NS, type) : document.createElement(type);
   for (const [key, value] of Object.entries(props)) {
     setProp(node, key, value);
   }
@@ -55,7 +57,7 @@ const createDomNode = (vnode) => {
       if (!vChild) {
         return;
       }
-      const childNode = createDomNode(vChild);
+      const childNode = createDomNode(vChild, isSvg);
       fragment.appendChild(childNode);
     });
     node.appendChild(fragment);
@@ -91,17 +93,17 @@ const patchClassList = (node, oldClassList, newClassList) => {
     }
   }
 };
-const patchChildren = (node, oldChildren, newChildren) => {
+const patchChildren = (node, oldChildren, newChildren, isSvg) => {
   const children = Array.from(node.children);
   const length = Math.max(oldChildren.length, newChildren.length);
   for (let i = 0; i < length; i++) {
     const oldChild = oldChildren[i];
     const newChild = newChildren[i];
-    const nodeChild = children[i];
     if (oldChild) {
-      patch(node, oldChild, newChild, nodeChild);
+      patch(node, oldChild, newChild, isSvg);
     } else if (newChild) {
       const newChildNode = createDomNode(newChild);
+      const nodeChild = children[i];
       if (nodeChild) {
         node.insertBefore(newChildNode, nodeChild);
       } else {
@@ -129,33 +131,34 @@ const patchProps = (node, oldProps, newProps) => {
     }
   }
 };
-const destroyVNode = (vnode, oldNode) => {
-  if (typeof vnode === "string") {
-    oldNode.remove();
-    return;
-  }
-  let child;
-  while (child = oldNode.lastChild) {
-    child.remove();
+const destroyVNode = (vnode) => {
+  if (vnode.type !== TEXT_NODE) {
+    let child;
+    while (child = vnode.node.lastChild) {
+      child.remove();
+    }
   }
   vnode.node.remove();
   vnode.node = null;
 };
-const patch = (rootNode, oldTree, newTree, oldNode) => {
+const patch = (rootNode, oldTree, newTree, isSvg = false) => {
   if (!oldTree && newTree) {
-    const node = createDomNode(newTree);
+    const node = createDomNode(newTree, isSvg);
     rootNode.appendChild(node);
   } else if (!newTree) {
     destroyVNode(oldTree);
-  } else if (isStr(oldTree) && isStr(newTree)) {
-    oldNode.data = newTree;
-  }
-  if (oldTree.type === newTree.type) {
-    patchChildren(oldTree.node, oldTree.children, newTree.children);
-    patchProps(oldTree.node, oldTree.props, newTree.props);
+  } else if (oldTree.type === newTree.type) {
+    if (oldTree.type === TEXT_NODE) {
+      if (oldTree.data !== newTree.data) {
+        oldTree.node.data = newTree.data;
+      }
+    } else if (oldTree.key === newTree.key) {
+      patchChildren(oldTree.node, oldTree.children, newTree.children, isSvg);
+      patchProps(oldTree.node, oldTree.props, newTree.props);
+    }
     newTree.node = oldTree.node;
   } else {
-    const newNode = createDomNode(newTree);
+    const newNode = createDomNode(newTree, isSvg);
     rootNode.insertBefore(newNode, oldTree.node);
     destroyVNode(oldTree);
   }
@@ -172,17 +175,13 @@ class Component extends HTMLElement {
   #oldTree = null;
   #hasLoaded = false;
   #hasRendered = false;
-  rootNode;
+  rootNode = this;
   static propTypes;
   set state(newState) {
     this.#currentState = deepFreeze(newState);
   }
   get state() {
     return this.#currentState;
-  }
-  constructor() {
-    super();
-    this.rootNode = this;
   }
   #reRender = async () => {
     await this.componentWillRender();
@@ -194,13 +193,19 @@ class Component extends HTMLElement {
   #requestReRender() {
     if (this.#frameRequest) {
       cancelAnimationFrame(this.#frameRequest);
+      this.#frameRequest = null;
     }
     this.#frameRequest = requestAnimationFrame(this.#reRender);
   }
+  #shouldRender(newValue, oldValue, name) {
+    return !this.#hasRendered || this.#frameRequest != null ? true : this.componentShouldUpdate(oldValue, newValue, name);
+  }
   setState(newState) {
-    this.componentShouldUpdate();
     const nextState = isFn(newState) ? newState(this.state) : newState;
     this.state = nextState;
+    if (!this.#shouldRender()) {
+      return;
+    }
     this.#requestReRender();
   }
   #updateProps() {
@@ -219,8 +224,11 @@ class Component extends HTMLElement {
     }
     const oldValue = this.props[name];
     const newValue = type(value);
-    this.componentShouldUpdate(oldValue, newValue, name);
     this.props[name] = newValue;
+    if (!this.#hasRendered) {
+      return true;
+    }
+    return this.#shouldRender(newValue, oldValue, name);
   }
   async connectedCallback() {
     this.#updateProps();
@@ -228,6 +236,7 @@ class Component extends HTMLElement {
       this.#hasLoaded = true;
       await this.componentWillLoad();
     }
+    this.#hasRendered = true;
     this.#requestReRender();
     this.componentDidLoad();
     this.componentDidConnect();
@@ -240,7 +249,9 @@ class Component extends HTMLElement {
     if (newValue === oldValue) {
       return;
     }
-    this.#updateProp(propName, newValue);
+    if (!this.#updateProp(propName, newValue)) {
+      return;
+    }
     this.#requestReRender();
   }
   componentDidConnect() {
@@ -252,6 +263,7 @@ class Component extends HTMLElement {
   componentDidLoad() {
   }
   componentShouldUpdate(_oldValue, _newValue, _propName) {
+    return true;
   }
   async componentWillRender() {
   }
@@ -262,5 +274,5 @@ class Component extends HTMLElement {
   }
 }
 
-export { Component, createRef, h, svg };
+export { Component, createRef, h, text };
 //# sourceMappingURL=index.js.map

@@ -3,8 +3,13 @@ export interface VNode {
     props: {},
     children: VNode[],
     node?: HTMLElement | SVGElement,
-    isSvg?: boolean,
     key?: any
+}
+
+export interface VText {
+    type: string,
+    data: string,
+    node?: Text
 }
 
 export type stringOrNull = string | null;

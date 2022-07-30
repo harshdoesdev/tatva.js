@@ -1,4 +1,4 @@
-import { VNode, stringOrNull } from "./types";
+import { VNode, stringOrNull, VText } from "./types";
 
 import { deepFreeze, isFn } from "./util";
 
@@ -18,7 +18,7 @@ export default class Component extends HTMLElement {
 
     #hasRendered = false
 
-    rootNode: this | ShadowRoot;
+    rootNode: this | ShadowRoot = this;
 
     static propTypes: any;
 
@@ -28,12 +28,6 @@ export default class Component extends HTMLElement {
 
     get state() {
         return this.#currentState;
-    }
-
-    constructor() {
-        super();
-
-        this.rootNode = this;
     }
 
     #reRender = async () => {
@@ -51,17 +45,26 @@ export default class Component extends HTMLElement {
     #requestReRender() {
         if(this.#frameRequest) {
             cancelAnimationFrame(this.#frameRequest);
+            this.#frameRequest = null;
         }
 
         this.#frameRequest = requestAnimationFrame(this.#reRender);
     }
 
-    setState(newState: any) {
-        this.componentShouldUpdate();
+    #shouldRender(newValue?: any, oldValue?: any, name?: string) {
+        return (!this.#hasRendered || this.#frameRequest != null)
+            ? true
+            : this.componentShouldUpdate(oldValue, newValue, name);
+    }
 
+    setState(newState: any) {
         const nextState = isFn(newState) ? newState(this.state) : newState;
 
         this.state = nextState;
+
+        if(!this.#shouldRender()) {
+            return;
+        }
 
         this.#requestReRender();
     }
@@ -88,10 +91,14 @@ export default class Component extends HTMLElement {
         const oldValue = this.props[name];
 
         const newValue = type(value);
-
-        this.componentShouldUpdate(oldValue, newValue, name);
         
         this.props[name] = newValue;
+
+        if(!this.#hasRendered) {
+            return true;
+        }
+
+        return this.#shouldRender(newValue, oldValue, name);
     }
 
     async connectedCallback() {
@@ -102,6 +109,8 @@ export default class Component extends HTMLElement {
 
             await this.componentWillLoad();
         }
+
+        this.#hasRendered = true;
 
         this.#requestReRender();
 
@@ -121,7 +130,9 @@ export default class Component extends HTMLElement {
             return;
         }
         
-        this.#updateProp(propName, newValue);
+        if(!this.#updateProp(propName, newValue)) {
+            return;
+        }
 
         this.#requestReRender();
     }
@@ -134,13 +145,15 @@ export default class Component extends HTMLElement {
 
     componentDidLoad() {}
 
-    componentShouldUpdate(_oldValue?: any, _newValue?: any, _propName?: string) {}
+    componentShouldUpdate(_oldValue?: any, _newValue?: any, _propName?: string) {
+        return true;
+    }
 
     async componentWillRender() {}
 
     componentDidRender() {}
 
-    render(_state: any, _props: any): VNode {
+    render(_state: any, _props: any): VNode|VText {
         throw new Error('render method has not been defined.');
     }
 
